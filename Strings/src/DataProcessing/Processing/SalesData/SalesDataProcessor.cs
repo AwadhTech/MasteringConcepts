@@ -2,6 +2,7 @@
 
 internal sealed class SalesDataProcessor : Processor<ProcessedSalesData>
 {
+    private const char SplitChar = '|';
     private readonly CultureInfo _cultureInfo;
     private readonly ILogger<SalesDataProcessor> _logger;
 
@@ -27,9 +28,15 @@ internal sealed class SalesDataProcessor : Processor<ProcessedSalesData>
         await foreach (var row in dataReader.ReadRowsAsync(cancellationToken))
         {
             var succeeded = false;
-
-            // TODO - Implementation
-
+            if (string.IsNullOrEmpty(row))
+            {
+                var rowPart = row.Split(SplitChar);
+                if (HistoricalSalesData.TryCreateFromHistoricalData(rowPart, _cultureInfo, out var historicalSalesData))
+                {
+                    processedData.Add(historicalSalesData);
+                    succeeded = true;
+                }
+            }
             if (!succeeded)
             {
                 _logger.LogWarning("Row is invalid and cannot be processed. {FailedRow}.", row);
