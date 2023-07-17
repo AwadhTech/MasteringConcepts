@@ -1,4 +1,6 @@
-﻿namespace DataProcessing;
+﻿using System.Text.RegularExpressions;
+
+namespace DataProcessing;
 
 internal sealed class SalesDataProcessor : Processor<ProcessedSalesData>
 {
@@ -28,21 +30,27 @@ internal sealed class SalesDataProcessor : Processor<ProcessedSalesData>
         await foreach (var row in dataReader.ReadRowsAsync(cancellationToken))
         {
             var succeeded = false;
-            if (string.IsNullOrEmpty(row))
-            {
-                /*var rowPart = row.Split(SplitChar);
-                if (HistoricalSalesData.TryCreateFromHistoricalData(rowPart, _cultureInfo, out var historicalSalesData))
-                {
-                    processedData.Add(historicalSalesData);
-                    succeeded = true;
-                }*/
 
-                if (HistoricalSalesData.TryCreateFromRow(row, _cultureInfo, out var historicalSalesData))
+            if (!string.IsNullOrWhiteSpace(row))
+            {
+                //var rowParts = row.Split(SplitChar);
+                //var rowParts = Regex.Split(row, @"\|");
+
+                //if (HistoricalSalesData.TryCreateFromHistoricalData(
+                //    rowParts, _cultureInfo, out var historicalSalesData))
+                //{
+                //    processedData.Add(historicalSalesData);
+                //    succeeded = true;
+                //}
+
+                if (HistoricalSalesData.TryCreateFromRow(row, _cultureInfo,
+                    out var historicalSalesData))
                 {
                     processedData.Add(historicalSalesData);
                     succeeded = true;
                 }
             }
+
             if (!succeeded)
             {
                 _logger.LogWarning("Row is invalid and cannot be processed. {FailedRow}.", row);

@@ -6,14 +6,8 @@ internal static class DataProcessor
     {
         if (options.OutputPath != string.Empty)
             Directory.CreateDirectory(options.OutputPath);
-        if (options.ProcessSalesData)
-        {
-            await SalesData.ProcessSalesDataSamplesAsync(options, cancellationToken);
-        }
 
-        if (options.ProcessCustomerData)
-        {
-            await CustomerData.ProcessCustomerDataSamplesAsync(options, cancellationToken);
-        }
+        if (options.ProcessSalesData)
+            await SalesData.ProcessSalesDataSamplesAsync(options, cancellationToken);
     }
 }

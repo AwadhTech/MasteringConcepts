@@ -4,16 +4,17 @@ namespace DataProcessing;
 
 internal sealed class CustomerDataProcessor : Processor<ProcessedCustomerData>
 {
-
     private const string RegularCustomerStartCode = "BA";
+
     //language=regex
     private const string CustomerDataPattern = @"\[(?<data>.*?)\]";
-    // compiled regex offer better performance
-    private static Regex customerRegex = new(CustomerDataPattern, RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+    private static readonly Regex CustomerRegex = new (CustomerDataPattern,
+        RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+
     public CustomerDataProcessor(ProcessingOptions processingOptions) : base(processingOptions)
     {
     }
-
+    
     public override async Task<ProcessedCustomerData> ProcessAsync(string filename, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(filename);
@@ -25,15 +26,20 @@ internal sealed class CustomerDataProcessor : Processor<ProcessedCustomerData>
 
         await foreach (var row in dataReader.ReadRowsAsync(cancellationToken))
         {
-            //var matches = Regex.Matches(row, CustomerDataPattern, RegexOptions.None, TimeSpan.FromSeconds(1));
-            var matches = customerRegex.Matches(row);
+            var matches = CustomerRegex.Matches(row);
+
             if (matches.Count == 4)
             {
                 var customerCode = matches[0].Groups["data"].Value;
-                if (!Guid.TryParseExact(matches[1].Groups["data"].Value, "D", out Guid parsedGuid))
+
+                if (!Guid.TryParseExact(matches[1].Groups["data"].Value, "D",
+                    out var parsedGuid))
                     continue;
+
                 var country = matches[2].Groups["data"].Value;
+
                 var data = new HistoricalCustomerData(parsedGuid, customerCode, country);
+
                 var compareResult = string.CompareOrdinal(customerCode, RegularCustomerStartCode);
                 if (compareResult < 0)
                 {

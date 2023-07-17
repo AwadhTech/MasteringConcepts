@@ -1,4 +1,4 @@
-﻿namespace DataProcessing.Reporting.SalesData;
+﻿namespace DataProcessing.Reporting;
 
 internal sealed class SalesCategoryCodesWriter : DataWriter<IEnumerable<HistoricalSalesData>>
 {
@@ -12,9 +12,12 @@ internal sealed class SalesCategoryCodesWriter : DataWriter<IEnumerable<Historic
         CancellationToken cancellationToken = default)
     {
         var sortedCodes = salesData
-            .Select(c => c.Category.Code)
-            .Distinct()
-            .OrderBy(c => c);
+            .Select(s => s.Category.Code)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c, StringComparer.OrdinalIgnoreCase);
+        
+        // TODO - Implementation
+
         return Task.CompletedTask;
     }
 }

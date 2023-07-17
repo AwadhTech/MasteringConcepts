@@ -6,9 +6,10 @@ namespace DataProcessing;
 internal sealed class HistoricalSalesData
 {
     private static readonly DateTimeStyles DateStyle =
-        DateTimeStyles.AssumeLocal |
         DateTimeStyles.AdjustToUniversal |
-        DateTimeStyles.AllowWhiteSpaces;
+        DateTimeStyles.AllowWhiteSpaces |
+        DateTimeStyles.AssumeLocal;
+
     public string ProductName { get; init; } = string.Empty;
     public long Quantity { get; init; } = -1;
     public string CurrencySymbol { get; init; } = string.Empty;
@@ -43,17 +44,27 @@ internal sealed class HistoricalSalesData
         ArgumentNullException.ThrowIfNull(cultureInfo);
 
         historicalSalesData = null;
+        
         if (sourceData.Length == 7)
         {
             var productName = sourceData[0];
-            if (!long.TryParse(sourceData[1], NumberStyles.Number, cultureInfo, out var quantity))
+
+            if (!long.TryParse(sourceData[1], NumberStyles.Number,
+                cultureInfo, out var quantity))
                 return false;
-            if (!decimal.TryParse(sourceData[2], NumberStyles.Currency, cultureInfo, out var unitPrice))
+
+            if (!decimal.TryParse(sourceData[2], NumberStyles.Currency,
+                cultureInfo, out var unitPrice) || unitPrice < 0)
                 return false;
-            if (!int.TryParse(sourceData[3], NumberStyles.Number, cultureInfo, out var tax))
+
+            if (!int.TryParse(sourceData[3], NumberStyles.Number,
+                cultureInfo, out var tax) || tax < 0 || tax > 100)
                 return false;
-            if (!DateTimeOffset.TryParse(sourceData[4], cultureInfo, DateStyle, out var date))
+
+            if (!DateTimeOffset.TryParse(sourceData[4], cultureInfo,
+                DateStyle, out var date))
                 return false;
+
             if (!Category.TryParse(sourceData[6], out var category))
                 return false;
 
@@ -68,12 +79,14 @@ internal sealed class HistoricalSalesData
                 Category = category,
                 CurrencySymbol = cultureInfo.NumberFormat.CurrencySymbol
             };
+
             if (data.IsValid)
             {
                 historicalSalesData = data;
                 return true;
             }
         }
+
         return false;
     }
 
@@ -87,20 +100,30 @@ internal sealed class HistoricalSalesData
         ArgumentNullException.ThrowIfNull(cultureInfo);
 
         historicalSalesData = null;
-        var match = Regex.Match(row, @"^(?:(?<parts>[^|]+)\|){6}(?<parts>(?<code>[a-zA-Z]{3}/d{3}):(?<desc>.+))$");
+
+        var match = Regex.Match(row, @"^(?:(?<parts>[^|]+)\|){6}(?<parts>(?<code>[a-zA-Z]{3}\d{3}):(?<desc>.+))$");
+
         var parts = match.Groups["parts"];
+
         if (!match.Success)
             return false;
+
         var productName = parts.Captures[0].Value;
-        if (!long.TryParse( parts.Captures[1].Value, NumberStyles.Number, cultureInfo, out var quantity))
+
+        if (!long.TryParse(parts.Captures[1].Value, NumberStyles.Integer,
+            cultureInfo, out var quantity))
             return false;
-        if (!decimal.TryParse( parts.Captures[2].Value, NumberStyles.Currency, cultureInfo, out var unitPrice))
+
+        if (!decimal.TryParse(parts.Captures[2].Value, NumberStyles.Currency,
+            cultureInfo, out var unitPrice) || unitPrice < 0)
             return false;
-        if (!int.TryParse( parts.Captures[3].Value, NumberStyles.Number, cultureInfo, out var tax))
+
+        if (!int.TryParse(parts.Captures[3].Value, NumberStyles.Number,
+            cultureInfo, out var tax) || tax < 0 || tax > 100)
             return false;
-        if (!DateTimeOffset.TryParse( parts.Captures[4].Value, cultureInfo, DateStyle, out var date))
-            return false;
-        if (!Category.TryParse(parts.Captures[6].Value, out var category))
+
+        if (!DateTimeOffset.TryParse(parts.Captures[4].Value, cultureInfo,
+            DateStyle, out var date))
             return false;
 
         var data = new HistoricalSalesData
@@ -111,17 +134,17 @@ internal sealed class HistoricalSalesData
             UnitPrice = unitPrice,
             SalesTaxPercentage = tax,
             UtcSalesDateTime = date,
-            Category = new Category(match.Groups["code"].Value, match.Groups["desc"].Value),
+            Category = new Category(match.Groups["code"].Value,
+                match.Groups["desc"].Value),
             CurrencySymbol = cultureInfo.NumberFormat.CurrencySymbol
         };
+
         if (data.IsValid)
         {
             historicalSalesData = data;
             return true;
         }
-        
-        
-        
+
         return false;
     }
 
@@ -137,16 +160,5 @@ internal sealed class HistoricalSalesData
         return false;
     }
 
-    public bool IsValid => !string.IsNullOrEmpty(ProductName) &&
-                           Category != default &&
-                           Quantity >= 0 &&
-                           UnitPrice >= 0 &&
-                           SalesTaxPercentage >= 0 && SalesTaxPercentage <= 100 &&
-                           UtcSalesDateTime > DateTimeOffset.MinValue &&
-                           !string.IsNullOrWhiteSpace(CurrencySymbol) &&
-                           !string.IsNullOrWhiteSpace(ProductSalesCode) &&
-                           !ProductSalesCode.Equals(ProductInfo.InvalidValue) &&
-                           !string.IsNullOrWhiteSpace(ProductSku) &&
-                           !ProductSku.Equals(ProductInfo.InvalidValue);
-
+    public bool IsValid => true;
 }
