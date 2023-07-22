@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
-namespace DataProcessing.Processing.ProxyLogData;
+namespace DataProcessing;
 
 internal class InsecureHostsByIPAddressDictionary : IDictionary<IPAddress, HashSet<string>>
 {

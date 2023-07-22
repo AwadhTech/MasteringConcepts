@@ -4,9 +4,10 @@ namespace DataProcessing;
 
 internal readonly struct ProductInfo : IEquatable<ProductInfo>
 {
+    // language=regex
+    private const string ParsePattern = @"^(?<code>\d+)[:-](?:[a-z]#)?(?!.*#|.*-)(?<sku>[^(]+)";
+
     public const string InvalidValue = "INVALID";
-    private const string ParsePattern = @"^(?<code>\d+)[:-](?:[a-z]#)?(?!.*#|.*-)(?<sku>[^(\n]+)";
-    private static Regex _productInfoRegex = new(ParsePattern, RegexOptions.Compiled, TimeSpan.FromSeconds(1)); 
     public static ProductInfo Invalid = new(InvalidValue, InvalidValue);
 
     public ProductInfo(string saleCode, string sku) => (SalesCode, Sku) = (saleCode, sku);
@@ -17,13 +18,15 @@ internal readonly struct ProductInfo : IEquatable<ProductInfo>
     public static ProductInfo Parse(string productInfoString)
     {
         ArgumentNullException.ThrowIfNull(productInfoString);
+
         //productInfoString = productInfoString.Replace(':', '-');
+        
         if (string.Empty.Equals(productInfoString) ||
-            !productInfoString.Contains('-') && !productInfoString.Contains(':'))
+            (!productInfoString.Contains('-') && !productInfoString.Contains(':')))
         {
             return Invalid;
         }
-        
+
         var parts = productInfoString.Contains('-')
             ? productInfoString.Split('-')
             : productInfoString.Split(':');
@@ -37,10 +40,9 @@ internal readonly struct ProductInfo : IEquatable<ProductInfo>
 
         var salesCode = parts[0];
         var sku = parts[1];
+
         if (salesCode.Any(c => !char.IsDigit(c)))
-        {
             return Invalid;
-        }
 
         if (char.IsLower(sku[0]) && sku[1].Equals('#'))
         {
@@ -51,23 +53,25 @@ internal readonly struct ProductInfo : IEquatable<ProductInfo>
             return Invalid;
         }
 
-        var parentStart = sku.IndexOf('(');
-        if (parentStart != -1)
+        var parenStart = sku.IndexOf('(');
+        if (parenStart != -1)
         {
-            sku = sku.Remove(parentStart);
+            sku = sku.Remove(parenStart);
         }
-        
+
         return new ProductInfo(salesCode, sku);
     }
 
     public static ProductInfo ParseUsingRegex(string productInfoString)
     {
         ArgumentNullException.ThrowIfNull(productInfoString);
-        var match = _productInfoRegex.Match(productInfoString);
+
+        var match = Regex.Match(productInfoString, ParsePattern, RegexOptions.None,
+            TimeSpan.FromSeconds(1));
+
         return match.Success && match.Groups.ContainsKey("code") && match.Groups.ContainsKey("sku")
             ? new ProductInfo(match.Groups["code"].Value, match.Groups["sku"].Value)
             : Invalid;
-
     }
 
     public override bool Equals(object? obj) => obj is ProductInfo info && Equals(info);

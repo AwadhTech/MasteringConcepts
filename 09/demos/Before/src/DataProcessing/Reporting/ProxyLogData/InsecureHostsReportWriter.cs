@@ -1,7 +1,5 @@
 ﻿using System.Text;
 
-using DataProcessing.Processing.ProxyLogData;
-
 namespace DataProcessing.Reporting;
 
 internal class InsecureHostsReportWriter : DataWriter<InsecureHostsByIPAddressDictionary>
